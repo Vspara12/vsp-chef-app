@@ -20,18 +20,19 @@ with col2:
 st.markdown("<h1 style='text-align: center;'>VSP Chef</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 4. API Key Configuration
+# 4. API Key & Model Configuration
 if "GEMINI_API_KEY" in st.secrets:
     try:
         api_key = st.secrets["GEMINI_API_KEY"].replace('"', '').replace("'", "").strip()
         genai.configure(api_key=api_key)
         
-        # திருத்தம்: மீண்டும் பழையபடி 'gemini-1.5-flash' என மாற்றப்பட்டுள்ளது. இதுதான் சரியானது.
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # --- மாற்றம் செய்யப்பட்ட இடம் ---
+        # சாதாரண பெயரில் வேலை செய்யவில்லை என்றால், இந்த '-latest' பெயர் வேலை செய்யும்.
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         
         st.success("✅ VSP Chef is Ready to Cook!")
     except Exception as e:
-        st.error(f"API Key Error: {e}")
+        st.error(f"API Setup Error: {e}")
 else:
     st.warning("⚠️ Waiting for API Key...")
 
@@ -68,6 +69,5 @@ if user_query:
             st.markdown(response.text)
             st.success("Bon Appétit! - VSP Chef")
         except Exception as e:
-            st.error(f"Error: {e}")
-            # ஒருவேளை 1.5 Flash வேலை செய்யவில்லை என்றால், Pro மாடலை முயற்சி செய்ய அறிவுரை
-            st.info("If the error persists, try refreshing the page.")
+            # ஒருவேளை பிழை வந்தால், அது என்னவென்று தெளிவாகக் காட்டும்
+            st.error(f"Cooking Error: {e}")
