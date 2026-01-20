@@ -23,12 +23,13 @@ st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUI
 # 4. API Key & Model Configuration
 if "GEMINI_API_KEY" in st.secrets:
     try:
+        # API Key Cleaning
         api_key = st.secrets["GEMINI_API_KEY"].replace('"', '').replace("'", "").strip()
         genai.configure(api_key=api_key)
         
-        # --- மாற்றம் செய்யப்பட்ட இடம் ---
-        # சாதாரண பெயரில் வேலை செய்யவில்லை என்றால், இந்த '-latest' பெயர் வேலை செய்யும்.
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        # --- சரியான பெயர் ---
+        # இப்போது Key சரியாக இருப்பதால், இந்த பெயர் கண்டிப்பாக வேலை செய்யும்.
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         st.success("✅ VSP Chef is Ready to Cook!")
     except Exception as e:
@@ -67,7 +68,7 @@ if user_query:
             
             st.markdown("---")
             st.markdown(response.text)
+            st.balloons() # சமையல் முடிந்ததும் பலூன் பறக்கும்!
             st.success("Bon Appétit! - VSP Chef")
         except Exception as e:
-            # ஒருவேளை பிழை வந்தால், அது என்னவென்று தெளிவாகக் காட்டும்
             st.error(f"Cooking Error: {e}")
