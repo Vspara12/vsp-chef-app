@@ -6,25 +6,33 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- 🛑 ULTIMATE HIDE CODE (அந்தக் கீழ் பட்டையை மறைக்கும் மந்திரம்) ---
+# --- 🛑 DISABLE CLICKS ON LOGO (லோகோ கிளிக் செய்வதைத் தடுக்கும் கோட்) ---
 hide_streamlit_style = """
             <style>
-            /* 1. மேல் மெனுவை மறைக்க */
+            /* 1. மெனு மற்றும் தலைப்பை மறைக்க */
             #MainMenu {visibility: hidden;}
-            
-            /* 2. கீழே உள்ள Footer மறைக்க */
-            footer {visibility: hidden;}
-            
-            /* 3. தலைப்பு பாரை மறைக்க */
             header {visibility: hidden;}
             
-            /* 4. கலர் கோடுகளை மறைக்க */
-            [data-testid="stDecoration"] {display: none;}
+            /* 2. Footer-ஐ மறைக்க முயற்சிக்கிறோம் */
+            footer {visibility: hidden;}
             
-            /* 5. மிக முக்கியம்: அந்த 'Created by' பட்டையை மறைக்க */
-            [data-testid="stToolbar"] {display: none !important;}
-            [data-testid="stStatusWidget"] {display: none !important;}
-            div[class*="viewerBadge"] {display: none !important;}
+            /* 3. மிக முக்கியம்: கீழே உள்ள பட்டையை யாராவது தொட்டால் வேலை செய்யாது! */
+            footer {
+                pointer-events: none !important;
+            }
+            [data-testid="stToolbar"] {
+                display: none !important;
+                pointer-events: none !important;
+            }
+            div[class*="viewerBadge"] {
+                display: none !important;
+                pointer-events: none !important;
+            }
+            
+            /* 4. ஒருவேளை அது தெரிந்தாலும், அதைத் தள்ளி மறைத்துவிடுவோம் */
+            .stApp {
+                margin-bottom: -100px;
+            }
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
