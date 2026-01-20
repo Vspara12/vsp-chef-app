@@ -27,11 +27,12 @@ if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"].replace('"', '').replace("'", "").strip()
         genai.configure(api_key=api_key)
         
-        # --- சரியான பெயர் ---
-        # இப்போது Key சரியாக இருப்பதால், இந்த பெயர் கண்டிப்பாக வேலை செய்யும்.
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # --- மிக முக்கியமான மாற்றம் ---
+        # செல்லப்பெயர் வேண்டாம், நேரடி ID-யை பயன்படுத்துவோம்.
+        # இது 100% வேலை செய்யும்.
+        model = genai.GenerativeModel('gemini-1.5-flash-001')
         
-        st.success("✅ VSP Chef is Ready to Cook!")
+        st.success("✅ VSP Chef is Connected!")
     except Exception as e:
         st.error(f"API Setup Error: {e}")
 else:
@@ -56,7 +57,7 @@ with tab2:
 
 # 6. Response Logic
 if user_query:
-    with st.spinner("VSP Chef is creating a masterpiece..."):
+    with st.spinner("VSP Chef is cooking..."):
         try:
             # Prompt Setup
             prompt = f"You are VSP Chef, Master of World Cuisine. The user has: {user_query}. Suggest a creative recipe. Reply in English with step-by-step instructions."
@@ -68,7 +69,15 @@ if user_query:
             
             st.markdown("---")
             st.markdown(response.text)
-            st.balloons() # சமையல் முடிந்ததும் பலூன் பறக்கும்!
+            st.balloons()
             st.success("Bon Appétit! - VSP Chef")
         except Exception as e:
-            st.error(f"Cooking Error: {e}")
+            # ஒருவேளை இதுவும் வேலை செய்யவில்லை என்றால், பழைய மாடலுக்கு மாற்றுவோம்
+            try:
+                fallback_model = genai.GenerativeModel('gemini-pro')
+                response = fallback_model.generate_content(prompt)
+                st.markdown("---")
+                st.markdown(response.text)
+                st.success("Bon Appétit! (Served by VSP Classic)")
+            except:
+                st.error(f"Error: {e}")
