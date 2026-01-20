@@ -6,17 +6,27 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- 🛑 HIDDEN MODE ACTIVATED (லோகோ, மெனு அனைத்தையும் மறைக்கும் கோட்) ---
+# --- 🛑 SUPER CLEAN MODE (எல்லா பட்டன்களையும் மறைக்கும் கோட்) ---
 hide_streamlit_style = """
             <style>
+            /* மேல் மெனுவை மறைக்க */
             #MainMenu {visibility: hidden;}
+            
+            /* கீழே உள்ள Footer (Made with Streamlit) மறைக்க */
             footer {visibility: hidden;}
+            
+            /* தலைப்பு பாரை மறைக்க */
             header {visibility: hidden;}
-            .stApp > header {display: none;}
-            div[data-testid="stToolbar"] {visibility: hidden; height: 0%; position: fixed;}
+            
+            /* வலது ஓரத்தில் வரும் வண்ணக் கோடுகளை மறைக்க */
             div[data-testid="stDecoration"] {visibility: hidden; height: 0%; position: fixed;}
+            
+            /* கீழே வரும் Toolbar மற்றும் Manage App பட்டனை மறைக்க */
+            div[data-testid="stToolbar"] {visibility: hidden; height: 0%; position: fixed;}
             div[data-testid="stStatusWidget"] {visibility: hidden; height: 0%; position: fixed;}
-            .viewerBadge_container__1QSob {display: none;}
+            
+            /* சில மொபைல்களில் வரும் Viewer Badge ஐ மறைக்க */
+            [data-testid="stHeader"] {display:none;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -45,8 +55,7 @@ if "GEMINI_API_KEY" in st.secrets:
             if not chosen_model:
                 chosen_model = next((m for m in available_models if 'pro' in m), available_models[0])
             model = genai.GenerativeModel(chosen_model)
-            # Connected message removed as per previous request for clean look
-            # st.success("✅ VSP Chef is Connected!") 
+            # Connected message removed for clean look
         except:
             model = genai.GenerativeModel('gemini-pro')
     except Exception as e:
