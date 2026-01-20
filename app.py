@@ -18,7 +18,7 @@ with col2:
 st.markdown("<h1 style='text-align: center;'>VSP Chef</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 3. Smart Model Selection (இது அப்படியே இருக்கட்டும், இதுதான் Error வராமல் பார்த்துக் கொள்கிறது)
+# 3. Smart Model Selection
 model = None
 if "GEMINI_API_KEY" in st.secrets:
     try:
@@ -45,7 +45,7 @@ user_query = ""
 user_img = None
 
 with tab1:
-    txt = st.text_area("What ingredients do you have? (You can type in ANY language)")
+    txt = st.text_area("What ingredients do you have? (You can ask in any language)")
     if st.button("Get Recipe"):
         user_query = txt
 
@@ -55,24 +55,24 @@ with tab2:
         user_img = Image.open(file)
         user_query = "Suggest a world-class recipe based on these items."
 
-# 5. Cooking Logic (UNIVERSAL LANGUAGE UPDATE)
+# 5. Cooking Logic (SMART LANGUAGE FIX)
 if user_query and model:
     with st.spinner("VSP Chef is cooking..."):
         try:
-            # --- புதிய கட்டளை (Prompt) ---
-            # இது பயனர் பேசும் மொழியைத் தானாகவே கண்டுபிடிக்கும்.
+            # --- மிகவும் புத்திசாலித்தனமான மொழி அறிவுறுத்தல் ---
             prompt = f"""
             You are VSP Chef, a world-renowned Master of World Cuisine.
             
             USER INPUT: "{user_query}"
             
-            STRICT INSTRUCTIONS:
-            1. DETECT the language used by the user in the input above.
-            2. REPLY IN THE EXACT SAME LANGUAGE as the user. 
-               (Example: If input is Tamil -> Reply in Tamil. If French -> Reply in French. If Hindi -> Reply in Hindi).
-            3. Suggest a delicious world-class recipe based on the ingredients provided.
-            4. Provide clear, step-by-step cooking instructions.
-            5. Be professional, friendly, and encouraging.
+            CRITICAL LANGUAGE RULES (Follow strictly):
+            1. **PRIORITY 1:** If the user explicitly asks for a specific language (e.g., "Give me this in Chinese", "Reply in English", "தமிழ் மொழியில் தா"), you **MUST** reply in THAT requested language.
+            2. **PRIORITY 2:** If the user DOES NOT ask for a specific language, reply in the **SAME language** the user typed in.
+            
+            COOKING INSTRUCTIONS:
+            1. Suggest a delicious world-class recipe based on the ingredients provided.
+            2. Provide clear, step-by-step cooking instructions.
+            3. Be professional, friendly, and encouraging.
             """
             
             if user_img:
