@@ -1,44 +1,51 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+import os
 
 # 1. பக்க வடிவமைப்பு (Page Config)
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# 2. தேவையற்ற மெனுக்களை மறைத்தல் (Settings மாற்ற முடியாதபடி)
+# 2. தேவையற்ற மெனுக்களை மறைத்தல் மற்றும் போட்டோ ஸ்டைல்
 st.markdown("""
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    .profile-pic {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 50%;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. தலைப்பு (Branding)
-st.title("👨‍🍳 VSP Chef")
-st.subheader("MASTER OF WORLD CUISINE 🌎")
-st.write("Upload ingredients or a photo. I will suggest a world-class recipe!")
+# 3. உங்கள் புகைப்படத்தைக் காட்டுதல் (Centering the photo)
+col1, col2, col3 = st.columns([1,1,1])
+with col2:
+    if os.path.exists("myphoto.png"):
+        st.image("myphoto.png", width=150)
+    elif os.path.exists("myphoto.jpg"):
+        st.image("myphoto.jpg", width=150)
 
-# 4. API Key அமைத்தல் (இதை பிறகு Secrets-ல் சேர்ப்போம்)
+# 4. தலைப்பு (Branding)
+st.markdown("<h1 style='text-align: center;'>VSP Chef</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center;'>Upload ingredients or a photo. I will suggest a world-class recipe!</p>", unsafe_allow_html=True)
+
+# 5. API Key அமைத்தல்
 if "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-1.5-flash')
 
-    # 5. VSP Chef அறிவுரைகள் (System Prompt)
+    # VSP Chef அறிவுரைகள் (System Prompt)
     system_prompt = """
     You are 'VSP Chef', a world-renowned 'Master of World Cuisine'.
-    You are NOT limited to Indian cooking. You are an expert in Italian, Mexican, Chinese, Thai, Indian, Continental, and all global cuisines.
-    
-    YOUR GOAL:
-    Take the ingredients list or the photo provided by the user and suggest the BEST recipe from ANY cuisine that fits well.
-    
-    INSTRUCTIONS:
-    1. Introduce yourself as "VSP Chef".
-    2. Suggest a creative recipe name and its origin (e.g., "Mexican Tacos", "Italian Pasta").
-    3. List the ingredients clearly.
-    4. Provide step-by-step cooking instructions in ENGLISH.
-    5. Be professional, classy, and encouraging like a Master Chef.
+    You are an expert in all global cuisines (Italian, Mexican, Indian, etc.).
+    Always introduce yourself as VSP Chef.
+    Provide recipes in clear English with step-by-step instructions.
     """
 
     # 6. உள்ளீடுகள் (Inputs)
@@ -48,7 +55,7 @@ if "GEMINI_API_KEY" in st.secrets:
     submit = False
 
     with tab1:
-        text_val = st.text_area("List your ingredients here (e.g., Chicken, Cheese, Tomato):")
+        text_val = st.text_area("List your ingredients here:")
         if st.button("Ask VSP Chef (Text)"):
             user_input = text_val
             submit = True
@@ -63,7 +70,7 @@ if "GEMINI_API_KEY" in st.secrets:
     # 7. விடை (Result)
     if submit:
         if user_input or image_input:
-            with st.spinner("VSP Chef is cooking up a masterpiece... 🍲"):
+            with st.spinner("VSP Chef is creating a masterpiece... 🍲"):
                 try:
                     if image_input:
                         response = model.generate_content([system_prompt, user_input, image_input])
@@ -72,10 +79,8 @@ if "GEMINI_API_KEY" in st.secrets:
                     
                     st.markdown("---")
                     st.markdown(response.text)
-                    st.success("Enjoy your culinary journey! - VSP Chef")
+                    st.success("Bon Appétit! - VSP Chef")
                 except Exception as e:
                     st.error(f"Error: {e}")
-        else:
-            st.warning("Please enter ingredients or upload a photo.")
 else:
     st.warning("Please add the GEMINI_API_KEY to your Streamlit Secrets.")
