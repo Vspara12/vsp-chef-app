@@ -23,19 +23,17 @@ st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUI
 # 4. API Key Configuration
 if "GEMINI_API_KEY" in st.secrets:
     try:
-        # சாவியில் உள்ள இடைவெளிகளை (Spaces/New lines) முழுமையாக நீக்குகிறது
-        raw_key = st.secrets["GEMINI_API_KEY"]
-        clean_key = raw_key.replace('"', '').replace("'", "").strip()
+        api_key = st.secrets["GEMINI_API_KEY"].replace('"', '').replace("'", "").strip()
+        genai.configure(api_key=api_key)
         
-        genai.configure(api_key=clean_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # திருத்தம்: இங்கே 'gemini-1.5-flash' என்பதற்குப் பதிலாக 'models/gemini-1.5-flash' என மாற்றியுள்ளேன்
+        model = genai.GenerativeModel(model_name='gemini-1.5-flash')
         
-        # Test valid key
-        st.sidebar.success("✅ VSP Chef is Live!")
+        st.sidebar.success("✅ VSP Chef is Ready")
     except Exception as e:
         st.error(f"API Setup Error: {e}")
 else:
-    st.warning("⚠️ Waiting for API Key in Secrets...")
+    st.warning("⚠️ Waiting for API Key...")
 
 # 5. UI
 tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
@@ -56,16 +54,22 @@ with tab2:
 
 # 6. Response Logic
 if user_query:
-    with st.spinner("VSP Chef is creating a masterpiece..."):
+    with st.spinner("VSP Chef is thinking..."):
         try:
-            prompt = f"You are VSP Chef, Master of World Cuisine. Reply in English. {user_query}"
+            # இன்னும் தெளிவான அறிவுறுத்தல்
+            prompt_parts = [
+                "You are VSP Chef, Master of World Cuisine. Suggest a delicious recipe based on these ingredients. Reply in English with step-by-step instructions.",
+                user_query
+            ]
+            
             if user_img:
-                response = model.generate_content([prompt, user_img])
+                response = model.generate_content([prompt_parts[0], user_img])
             else:
-                response = model.generate_content(prompt)
+                response = model.generate_content(prompt_parts)
+            
             st.markdown("---")
             st.markdown(response.text)
-            st.success("Bon Appétit!")
+            st.success("Enjoy your meal! - VSP Chef")
         except Exception as e:
-            st.error(f"VSP Chef encountered an error: {e}")
-            st.info("Tip: Double check if your API Key is correctly added to Secrets.")
+            st.error(f"VSP Chef Error: {e}")
+            st.info("Trying to reconnect... Please click 'Get Recipe' again.")
