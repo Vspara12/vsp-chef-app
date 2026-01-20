@@ -26,12 +26,12 @@ if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"].replace('"', '').replace("'", "").strip()
         genai.configure(api_key=api_key)
         
-        # திருத்தம்: இங்கே 'gemini-1.5-flash' என்பதற்குப் பதிலாக 'models/gemini-1.5-flash' என மாற்றியுள்ளேன்
-        model = genai.GenerativeModel(model_name='gemini-1.5-flash')
+        # திருத்தம்: மீண்டும் பழையபடி 'gemini-1.5-flash' என மாற்றப்பட்டுள்ளது. இதுதான் சரியானது.
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        st.sidebar.success("✅ VSP Chef is Ready")
+        st.success("✅ VSP Chef is Ready to Cook!")
     except Exception as e:
-        st.error(f"API Setup Error: {e}")
+        st.error(f"API Key Error: {e}")
 else:
     st.warning("⚠️ Waiting for API Key...")
 
@@ -54,22 +54,20 @@ with tab2:
 
 # 6. Response Logic
 if user_query:
-    with st.spinner("VSP Chef is thinking..."):
+    with st.spinner("VSP Chef is creating a masterpiece..."):
         try:
-            # இன்னும் தெளிவான அறிவுறுத்தல்
-            prompt_parts = [
-                "You are VSP Chef, Master of World Cuisine. Suggest a delicious recipe based on these ingredients. Reply in English with step-by-step instructions.",
-                user_query
-            ]
+            # Prompt Setup
+            prompt = f"You are VSP Chef, Master of World Cuisine. The user has: {user_query}. Suggest a creative recipe. Reply in English with step-by-step instructions."
             
             if user_img:
-                response = model.generate_content([prompt_parts[0], user_img])
+                response = model.generate_content([prompt, user_img])
             else:
-                response = model.generate_content(prompt_parts)
+                response = model.generate_content(prompt)
             
             st.markdown("---")
             st.markdown(response.text)
-            st.success("Enjoy your meal! - VSP Chef")
+            st.success("Bon Appétit! - VSP Chef")
         except Exception as e:
-            st.error(f"VSP Chef Error: {e}")
-            st.info("Trying to reconnect... Please click 'Get Recipe' again.")
+            st.error(f"Error: {e}")
+            # ஒருவேளை 1.5 Flash வேலை செய்யவில்லை என்றால், Pro மாடலை முயற்சி செய்ய அறிவுரை
+            st.info("If the error persists, try refreshing the page.")
