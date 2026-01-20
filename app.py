@@ -30,11 +30,7 @@ if "GEMINI_API_KEY" in st.secrets:
             if not chosen_model:
                 chosen_model = next((m for m in available_models if 'pro' in m), available_models[0])
             model = genai.GenerativeModel(chosen_model)
-            
-            # --- மாற்றம் செய்யப்பட்ட இடம் ---
-            # மாடல் பெயரை மறைத்துவிட்டேன். வெறும் Connected என்று மட்டும் வரும்.
             st.success("✅ VSP Chef is Connected!")
-            
         except:
             model = genai.GenerativeModel('gemini-pro')
             st.warning("⚠️ Using Standard Mode")
@@ -43,39 +39,51 @@ if "GEMINI_API_KEY" in st.secrets:
 else:
     st.warning("⚠️ Waiting for API Key...")
 
-# 4. Inputs
+# 4. Inputs (UPDATED - Text box added to Photo Tab)
 tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
 user_query = ""
 user_img = None
 
+# Tab 1: Text Only
 with tab1:
-    txt = st.text_area("What ingredients do you have? (You can ask in any language)")
+    txt = st.text_area("What ingredients do you have? (Any language)")
     if st.button("Get Recipe"):
         user_query = txt
 
+# Tab 2: Photo + Text (New Feature)
 with tab2:
     file = st.file_uploader("Upload fridge photo", type=['jpg', 'png', 'jpeg'])
+    
+    # --- புதிய மாற்றம்: போட்டோவுடன் எழுத ஒரு பெட்டி ---
+    image_text = st.text_input("Add instructions (Optional):", placeholder="Ex: Make it spicy, or Reply in Tamil...")
+    
     if file and st.button("Analyze & Cook"):
         user_img = Image.open(file)
-        user_query = "Suggest a world-class recipe based on these items."
+        
+        # பயனர் ஏதேனும் எழுதியிருந்தால் அதை எடு, இல்லையென்றால் பொதுவான கேள்வியை எடு
+        if image_text:
+            user_query = image_text
+        else:
+            user_query = "Identify ingredients and suggest a world-class recipe."
 
-# 5. Cooking Logic (SMART LANGUAGE)
+# 5. Cooking Logic (Smart Language)
 if user_query and model:
     with st.spinner("VSP Chef is cooking..."):
         try:
             prompt = f"""
             You are VSP Chef, a world-renowned Master of World Cuisine.
             
-            USER INPUT: "{user_query}"
+            USER INPUT/CONTEXT: "{user_query}"
             
-            CRITICAL LANGUAGE RULES (Follow strictly):
-            1. **PRIORITY 1:** If the user explicitly asks for a specific language (e.g., "Give me this in Chinese", "Reply in English", "தமிழ் மொழியில் தா"), you **MUST** reply in THAT requested language.
-            2. **PRIORITY 2:** If the user DOES NOT ask for a specific language, reply in the **SAME language** the user typed in.
+            CRITICAL LANGUAGE RULES:
+            1. If the user explicitly asks for a language (e.g., "in Tamil"), reply in THAT language.
+            2. If no language is specified, reply in the SAME language the user typed.
+            3. If the user sent only a photo (no text), reply in English by default.
             
             COOKING INSTRUCTIONS:
-            1. Suggest a delicious world-class recipe based on the ingredients provided.
-            2. Provide clear, step-by-step cooking instructions.
-            3. Be professional, friendly, and encouraging.
+            1. Analyze the input (ingredients/photo).
+            2. Suggest a creative, delicious recipe.
+            3. Provide step-by-step instructions.
             """
             
             if user_img:
