@@ -30,7 +30,11 @@ if "GEMINI_API_KEY" in st.secrets:
             if not chosen_model:
                 chosen_model = next((m for m in available_models if 'pro' in m), available_models[0])
             model = genai.GenerativeModel(chosen_model)
-            st.success(f"✅ VSP Chef is Connected! (Using: {chosen_model})")
+            
+            # --- மாற்றம் செய்யப்பட்ட இடம் ---
+            # மாடல் பெயரை மறைத்துவிட்டேன். வெறும் Connected என்று மட்டும் வரும்.
+            st.success("✅ VSP Chef is Connected!")
+            
         except:
             model = genai.GenerativeModel('gemini-pro')
             st.warning("⚠️ Using Standard Mode")
@@ -55,11 +59,10 @@ with tab2:
         user_img = Image.open(file)
         user_query = "Suggest a world-class recipe based on these items."
 
-# 5. Cooking Logic (SMART LANGUAGE FIX)
+# 5. Cooking Logic (SMART LANGUAGE)
 if user_query and model:
     with st.spinner("VSP Chef is cooking..."):
         try:
-            # --- மிகவும் புத்திசாலித்தனமான மொழி அறிவுறுத்தல் ---
             prompt = f"""
             You are VSP Chef, a world-renowned Master of World Cuisine.
             
