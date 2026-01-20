@@ -6,27 +6,25 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- 🛑 SUPER CLEAN MODE (எல்லா பட்டன்களையும் மறைக்கும் கோட்) ---
+# --- 🛑 ULTIMATE HIDE CODE (அந்தக் கீழ் பட்டையை மறைக்கும் மந்திரம்) ---
 hide_streamlit_style = """
             <style>
-            /* மேல் மெனுவை மறைக்க */
+            /* 1. மேல் மெனுவை மறைக்க */
             #MainMenu {visibility: hidden;}
             
-            /* கீழே உள்ள Footer (Made with Streamlit) மறைக்க */
+            /* 2. கீழே உள்ள Footer மறைக்க */
             footer {visibility: hidden;}
             
-            /* தலைப்பு பாரை மறைக்க */
+            /* 3. தலைப்பு பாரை மறைக்க */
             header {visibility: hidden;}
             
-            /* வலது ஓரத்தில் வரும் வண்ணக் கோடுகளை மறைக்க */
-            div[data-testid="stDecoration"] {visibility: hidden; height: 0%; position: fixed;}
+            /* 4. கலர் கோடுகளை மறைக்க */
+            [data-testid="stDecoration"] {display: none;}
             
-            /* கீழே வரும் Toolbar மற்றும் Manage App பட்டனை மறைக்க */
-            div[data-testid="stToolbar"] {visibility: hidden; height: 0%; position: fixed;}
-            div[data-testid="stStatusWidget"] {visibility: hidden; height: 0%; position: fixed;}
-            
-            /* சில மொபைல்களில் வரும் Viewer Badge ஐ மறைக்க */
-            [data-testid="stHeader"] {display:none;}
+            /* 5. மிக முக்கியம்: அந்த 'Created by' பட்டையை மறைக்க */
+            [data-testid="stToolbar"] {display: none !important;}
+            [data-testid="stStatusWidget"] {display: none !important;}
+            div[class*="viewerBadge"] {display: none !important;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -55,7 +53,6 @@ if "GEMINI_API_KEY" in st.secrets:
             if not chosen_model:
                 chosen_model = next((m for m in available_models if 'pro' in m), available_models[0])
             model = genai.GenerativeModel(chosen_model)
-            # Connected message removed for clean look
         except:
             model = genai.GenerativeModel('gemini-pro')
     except Exception as e:
