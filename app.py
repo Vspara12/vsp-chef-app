@@ -4,8 +4,23 @@ from PIL import Image
 import os
 
 # 1. Page Setup
-st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳")
-st.markdown("""<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}</style>""", unsafe_allow_html=True)
+st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
+
+# --- 🛑 HIDDEN MODE ACTIVATED (லோகோ, மெனு அனைத்தையும் மறைக்கும் கோட்) ---
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stApp > header {display: none;}
+            div[data-testid="stToolbar"] {visibility: hidden; height: 0%; position: fixed;}
+            div[data-testid="stDecoration"] {visibility: hidden; height: 0%; position: fixed;}
+            div[data-testid="stStatusWidget"] {visibility: hidden; height: 0%; position: fixed;}
+            .viewerBadge_container__1QSob {display: none;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# -----------------------------------------------------------------------
 
 # 2. Profile Photo
 col1, col2, col3 = st.columns([1,1,1])
@@ -30,43 +45,37 @@ if "GEMINI_API_KEY" in st.secrets:
             if not chosen_model:
                 chosen_model = next((m for m in available_models if 'pro' in m), available_models[0])
             model = genai.GenerativeModel(chosen_model)
-            st.success("✅ VSP Chef is Connected!")
+            # Connected message removed as per previous request for clean look
+            # st.success("✅ VSP Chef is Connected!") 
         except:
             model = genai.GenerativeModel('gemini-pro')
-            st.warning("⚠️ Using Standard Mode")
     except Exception as e:
         st.error(f"Setup Error: {e}")
 else:
     st.warning("⚠️ Waiting for API Key...")
 
-# 4. Inputs (UPDATED - Text box added to Photo Tab)
+# 4. Inputs
 tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
 user_query = ""
 user_img = None
 
-# Tab 1: Text Only
 with tab1:
     txt = st.text_area("What ingredients do you have? (Any language)")
     if st.button("Get Recipe"):
         user_query = txt
 
-# Tab 2: Photo + Text (New Feature)
 with tab2:
     file = st.file_uploader("Upload fridge photo", type=['jpg', 'png', 'jpeg'])
-    
-    # --- புதிய மாற்றம்: போட்டோவுடன் எழுத ஒரு பெட்டி ---
     image_text = st.text_input("Add instructions (Optional):", placeholder="Ex: Make it spicy, or Reply in Tamil...")
     
     if file and st.button("Analyze & Cook"):
         user_img = Image.open(file)
-        
-        # பயனர் ஏதேனும் எழுதியிருந்தால் அதை எடு, இல்லையென்றால் பொதுவான கேள்வியை எடு
         if image_text:
             user_query = image_text
         else:
             user_query = "Identify ingredients and suggest a world-class recipe."
 
-# 5. Cooking Logic (Smart Language)
+# 5. Cooking Logic
 if user_query and model:
     with st.spinner("VSP Chef is cooking..."):
         try:
@@ -81,7 +90,7 @@ if user_query and model:
             3. If the user sent only a photo (no text), reply in English by default.
             
             COOKING INSTRUCTIONS:
-            1. Analyze the input (ingredients/photo).
+            1. Analyze the input.
             2. Suggest a creative, delicious recipe.
             3. Provide step-by-step instructions.
             """
