@@ -6,23 +6,33 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- ✅ SAFE CSS (ஆப் தெரிய வேண்டும், மெனு மறைய வேண்டும்) ---
-hide_elements = """
+# --- 🛑 ULTIMATE HIDE CSS (எல்லாவற்றையும் மறைக்கும் குறியீடு) ---
+hide_styles = """
     <style>
-    /* மேல் வலது மூலையில் உள்ள 3 புள்ளிகள் மெனுவை மறைக்க */
-    #MainMenu {visibility: hidden;}
+    /* 1. மேலே உள்ள 'Fork' மற்றும் Header-ஐ மறைக்க (மிக முக்கியம்) */
+    header {visibility: hidden !important;}
+    [data-testid="stHeader"] {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
     
-    /* கீழே உள்ள 'Made with Streamlit' மறைக்க */
-    footer {visibility: hidden;}
+    /* 2. 'Fork' பட்டனைத் தனியாகக் குறிவைத்து மறைக்க */
+    .stDeployButton {display:none !important;}
+    div[role="button"] {visibility: hidden;} /* பட்டன்களை மறைக்கும் */
     
-    /* Deploy பட்டனை மறைக்க */
-    .stDeployButton {display:none;}
+    /* 3. கீழே உள்ள Footer மற்றும் லோகோவை மறைக்க */
+    footer {visibility: hidden !important; height: 0px !important;}
     
-    /* தலைப்பு பாரை (Header) முழுமையாக மறைக்காமல், அலங்காரத்தை மட்டும் மறைக்க */
-    [data-testid="stDecoration"] {display:none;}
+    /* 4. அந்த Viewer Badge (சிவம் நிற கிரீடம்) ஐ மறைக்க */
+    div[class*="viewerBadge"] {
+        display: none !important;
+    }
+    
+    /* 5. பாதுகாப்பு: எஞ்சியிருக்கும் லோகோக்களை கிளிக் செய்ய முடியாதபடி செய்தல் */
+    footer {
+        pointer-events: none !important;
+    }
     </style>
 """
-st.markdown(hide_elements, unsafe_allow_html=True)
+st.markdown(hide_styles, unsafe_allow_html=True)
 # -----------------------------------------------------------------------
 
 # 2. Profile Photo
