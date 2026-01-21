@@ -6,32 +6,34 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- 🛑 UNCLICKABLE MODE (தொட முடியாதபடி செய்யும் கோட்) ---
+# --- 🛑 FINAL ATTEMPT TO REMOVE BADGE (பட்டையை அகற்றும் கடைசி முயற்சி) ---
 hide_streamlit_style = """
             <style>
             /* 1. மெனு மற்றும் தலைப்பை மறைக்க */
             #MainMenu {visibility: hidden;}
             header {visibility: hidden;}
-            
-            /* 2. Footer ஐ மறைக்க */
             footer {visibility: hidden;}
             
-            /* 3. மிக முக்கியம்: அந்தச் சிவப்பு பட்டையை 'தொட முடியாதபடி' செய்தல் */
-            .stApp > header {
+            /* 2. அந்தச் சிவப்பு பட்டையை கண்டுபிடித்து மறைக்க (பல வழிகளில்) */
+            [data-testid="stToolbar"] {display: none !important;}
+            [data-testid="stDecoration"] {display: none !important;}
+            [data-testid="stStatusWidget"] {display: none !important;}
+            
+            /* 3. குறிப்பாக Viewer Badge-ஐ குறிவைத்து மறைக்க */
+            div[class*="viewerBadge"] {
+                visibility: hidden !important;
+                display: none !important;
                 pointer-events: none !important;
                 opacity: 0 !important;
             }
             
-            div[class*="viewerBadge"] {
-                pointer-events: none !important;
-                opacity: 0 !important;
+            /* 4. ஒருவேளை அது மறையவில்லை என்றால், அதை திரைக்கு வெளியே தள்ளிவிடுவோம் */
+            .viewerBadge_container__1QSob {
                 display: none !important;
             }
             
-            /* 4. பாதுகாப்பிற்காக திரையின் வலது கீழ் மூலையை செயலிழக்கச் செய்தல் */
-            /* இது அந்த லோகோ இருக்கும் இடத்தை மட்டும் 'Dead Zone' ஆக்கும் */
-            div[data-testid="stStatusWidget"] {
-                pointer-events: none !important;
+            /* 5. மொபைலில் பாதுகாப்பிற்காக */
+            body > div:last-child {
                 display: none !important;
             }
             </style>
