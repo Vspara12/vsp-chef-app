@@ -3,126 +3,137 @@ import google.generativeai as genai
 from PIL import Image
 import os
 
-# 1. Page Config (Mobile Friendly)
-st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered", initial_sidebar_state="collapsed")
+# 1. Page Config
+st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- CUSTOM CSS FOR PERFECT MOBILE UI ---
+# --- CSS FOR PERFECT UI (டிசைன் சரிசெய்யும் கோட்) ---
 st.markdown("""
     <style>
-    /* 1. தேவையில்லாத இடைவெளிகளைக் குறைத்தல் */
+    /* 1. தேவையில்லாத மேல் இடைவெளியை நீக்க */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 2rem !important;
         padding-bottom: 1rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
     }
     
-    /* 2. லோகோவைச் சிறிதாக்கி நடுவில் வைக்க */
-    .profile-img-container {
-        display: flex;
-        justify_content: center;
-        align_items: center;
-        margin-bottom: 10px;
+    /* 2. லோகோவைச் சரியாக நடுவில் கொண்டு வர */
+    div[data-testid="stImage"] {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
     }
-    .profile-img {
-        width: 100px;  /* லோகோ அளவு குறைக்கப்பட்டது */
-        height: 100px;
-        border-radius: 50%;
-        object-fit: cover;
+    div[data-testid="stImage"] > img {
         display: block;
         margin-left: auto;
         margin-right: auto;
     }
     
-    /* 3. தலைப்புகளைச் சிறிதாக்கி ஒரே வரியில் கொண்டு வர */
+    /* 3. VSP Chef தலைப்பு */
     h1 {
-        font-size: 1.8rem !important;
         text-align: center;
-        margin-bottom: 0px !important;
-        margin-top: 0px !important;
-    }
-    h3 {
-        font-size: 1rem !important;
-        text-align: center;
-        color: #cc7a00;
-        margin-top: 5px !important;
-        white-space: nowrap; /* ஒரே வரியில் வரவைக்க */
+        margin-bottom: -20px !important; /* இடைவெளியை குறைக்க */
+        padding-bottom: 0px !important;
+        font-size: 2.2rem !important;
+        font-weight: 700 !important;
     }
     
-    /* 4. மறைக்க வேண்டியவை */
-    #MainMenu, footer, header, [data-testid="stToolbar"], [data-testid="stDecoration"], .stDeployButton {
-        display: none !important;
+    /* 4. MASTER OF WORLD CUISINE (கலர் மாற்றம் & இடைவெளி நீக்கம்) */
+    h3 {
+        text-align: center;
+        margin-top: 0px !important;
+        padding-top: 5px !important;
+        color: #D35400 !important; /* அழகான ஆரஞ்சு நிறம் */
+        font-size: 1rem !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase;
     }
+    
+    /* 5. பட்டன்கள் மற்றும் தேவையற்றவற்றை மறைக்க */
+    #MainMenu, footer, header, .stDeployButton {display: none !important;}
+    [data-testid="stToolbar"] {display: none !important;}
     div[class*="viewerBadge"] {display: none !important;}
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Display Logo (Center & Small)
-col1, col2, col3 = st.columns([1,1,1])
-with col2:
-    if os.path.exists("myphoto.png"):
-        st.image("myphoto.png", width=120) # அளவு 120px ஆக குறைக்கப்பட்டது
-    elif os.path.exists("myphoto.jpg"):
-        st.image("myphoto.jpg", width=120)
+# 2. Display Logo (Center)
+# மூன்று காலம்களுக்குப் பதில், ஒரே காலமில் வைத்து CSS மூலம் நடுவில் கொண்டு வருகிறோம்
+if os.path.exists("myphoto.png"):
+    st.image("myphoto.png", width=140)
+elif os.path.exists("myphoto.jpg"):
+    st.image("myphoto.jpg", width=140)
 
-# 3. Titles (Compact)
+# 3. Titles (இடைவெளி இல்லாமல்)
 st.markdown("<h1>VSP Chef</h1>", unsafe_allow_html=True)
 st.markdown("<h3>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 4. API Key Logic
-api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+# 4. API & Model Setup
 model = None
+api_key = None
+if "GEMINI_API_KEY" in os.environ:
+    api_key = os.environ["GEMINI_API_KEY"]
+elif "GEMINI_API_KEY" in st.secrets:
+    api_key = st.secrets["GEMINI_API_KEY"]
 
 if api_key:
     try:
         clean_key = api_key.strip().replace('\n', '').replace('\r', '').replace('"', '').replace("'", "")
         genai.configure(api_key=clean_key)
         try:
-            # Auto-select model logic
-            all_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            chosen_model = next((m for m in all_models if 'flash' in m), None) or \
-                           next((m for m in all_models if 'pro' in m), 'gemini-pro')
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            chosen_model = next((m for m in available_models if 'flash' in m), None)
+            if not chosen_model:
+                chosen_model = next((m for m in available_models if 'pro' in m), 'gemini-pro')
             model = genai.GenerativeModel(chosen_model)
         except:
             model = genai.GenerativeModel('gemini-pro')
     except:
         st.error("API Error")
 
-# 5. Inputs & Refresh Logic
+# 5. RESTART BUTTON LOGIC (இதுதான் முக்கியம்)
 if 'generated' not in st.session_state:
     st.session_state.generated = False
 
-# Refresh Button (Clears everything)
+# சமையல் வந்த பிறகு மட்டும் இந்த பட்டன் தெரியும்
 if st.session_state.generated:
     if st.button("🔄 Start New Recipe (Refresh)"):
         st.session_state.generated = False
         st.rerun()
 
-# Tabs
+# 6. Inputs
 tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
 user_query = ""
 user_img = None
 
 with tab1:
-    # Key is added to clear text on refresh
-    txt = st.text_area("Ingredients (Any language):", key="txt_input")
-    if st.button("Get Recipe", type="primary"):
+    txt = st.text_area("What ingredients do you have? (Any language)", key="txt_input")
+    if st.button("Get Recipe"):
         user_query = txt
 
 with tab2:
     file = st.file_uploader("Upload fridge photo", type=['jpg', 'png', 'jpeg'], key="img_input")
-    image_text = st.text_input("Instructions (Optional):", placeholder="Ex: Make it spicy...", key="img_txt")
-    if file and st.button("Analyze & Cook", type="primary"):
+    image_text = st.text_input("Add instructions (Optional):", placeholder="Ex: Make it spicy...", key="img_txt")
+    if file and st.button("Analyze & Cook"):
         user_img = Image.open(file)
-        user_query = image_text if image_text else "Suggest a recipe based on this image."
+        if image_text:
+            user_query = image_text
+        else:
+            user_query = "Identify ingredients and suggest a world-class recipe."
 
-# 6. Cooking Logic
+# 7. Cooking Logic
 if user_query and model:
     with st.spinner("VSP Chef is cooking..."):
         try:
             prompt = f"""
-            You are VSP Chef. USER INPUT: "{user_query}"
-            RULES: Reply in the USER'S LANGUAGE. Suggest a delicious recipe with steps.
+            You are VSP Chef, a world-renowned Master of World Cuisine.
+            USER INPUT: "{user_query}"
+            
+            CRITICAL LANGUAGE RULES:
+            1. If user asks in Tamil -> Reply in TAMIL.
+            2. If user asks in English -> Reply in ENGLISH.
+            3. Detect and match the user's language automatically.
+            
+            COOKING INSTRUCTIONS:
+            Suggest a delicious recipe with step-by-step instructions.
             """
             
             if user_img:
@@ -136,7 +147,7 @@ if user_query and model:
             st.balloons()
             st.success("Bon Appétit! - VSP Chef")
             
-            # Mark as generated to show Refresh button next time
+            # சமையல் முடிந்ததும் Refresh பட்டன் வர இது உதவும்
             st.session_state.generated = True
             
         except Exception as e:
