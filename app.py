@@ -6,7 +6,7 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- HIDE ALL BADGES (சுத்தமான திரை) ---
+# --- HIDE ALL BADGES & LOGOS ---
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -31,34 +31,45 @@ with col2:
 st.markdown("<h1 style='text-align: center;'>VSP Chef</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 3. ROBUST API KEY HANDLING (சாவியைச் சரியாக எடுக்கும் முறை)
+# 3. ROBUST API KEY & MODEL HANDLING
 model = None
 api_key = None
 
-# Render-ல் இருந்து சாவியை எடுக்கிறோம்
+# Get API Key
 if "GEMINI_API_KEY" in os.environ:
     api_key = os.environ["GEMINI_API_KEY"]
-# இல்லையென்றால் Streamlit-ல் பார்க்கிறோம்
 elif "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
 
 if api_key:
     try:
-        # சாவியில் உள்ள இடைவெளிகள், வரிகள் அனைத்தையும் நீக்குகிறோம் (Super Clean)
+        # Clean Key
         clean_key = api_key.strip().replace('\n', '').replace('\r', '').replace('"', '').replace("'", "")
-        
         genai.configure(api_key=clean_key)
         
-        # மாடலைத் தேர்வு செய்தல்
+        # --- SMART MODEL SELECTION (The Fix for 404) ---
         try:
-            model = genai.GenerativeModel('gemini-1.5-flash')
-        except:
-            model = genai.GenerativeModel('gemini-pro')
+            # 1. கூகுளிடம் உள்ள மாடல்களைப் பட்டியலிடு
+            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
             
+            # 2. அதில் 'flash' உள்ளதா எனத் தேடு
+            chosen_model_name = next((m for m in available_models if 'flash' in m), None)
+            
+            # 3. இல்லை என்றால் 'pro' அல்லது முதலில் உள்ளதை எடு
+            if not chosen_model_name:
+                chosen_model_name = next((m for m in available_models if 'pro' in m), 'gemini-pro')
+            
+            model = genai.GenerativeModel(chosen_model_name)
+            # st.success(f"Connected to {chosen_model_name}") # Testing only
+            
+        except Exception as e:
+            # பட்டியலிட முடியாவிட்டால், பாதுகாப்பான பழைய மாடலை எடு
+            model = genai.GenerativeModel('gemini-pro')
+
     except Exception as e:
-        st.error(f"Configuration Error: {e}")
+        st.error(f"Config Error: {e}")
 else:
-    st.warning("⚠️ Connecting to VSP Kitchen...")
+    st.warning("⚠️ Connecting...")
 
 # 4. Inputs
 tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
@@ -84,7 +95,7 @@ with tab2:
 # 5. Cooking Logic
 if user_query:
     if not model:
-        st.error("API Key not found. Please check settings.")
+        st.error("Checking connection... Please try again in 5 seconds.")
     else:
         with st.spinner("VSP Chef is cooking..."):
             try:
@@ -107,6 +118,7 @@ if user_query:
                     try:
                         response = model.generate_content([prompt, user_img])
                     except:
+                        # If image fails, try text only
                         response = model.generate_content(prompt)
                 else:
                     response = model.generate_content(prompt)
@@ -116,4 +128,4 @@ if user_query:
                 st.balloons()
                 st.success("Bon Appétit! - VSP Chef")
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"Recipe Error: {e}")
