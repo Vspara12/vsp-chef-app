@@ -6,36 +6,26 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- 🛑 DISABLE CLICKS ON LOGO (லோகோ கிளிக் செய்வதைத் தடுக்கும் கோட்) ---
-hide_streamlit_style = """
-            <style>
-            /* 1. மெனு மற்றும் தலைப்பை மறைக்க */
-            #MainMenu {visibility: hidden;}
-            header {visibility: hidden;}
-            
-            /* 2. Footer-ஐ மறைக்க முயற்சிக்கிறோம் */
-            footer {visibility: hidden;}
-            
-            /* 3. மிக முக்கியம்: கீழே உள்ள பட்டையை யாராவது தொட்டால் வேலை செய்யாது! */
-            footer {
-                pointer-events: none !important;
-            }
-            [data-testid="stToolbar"] {
-                display: none !important;
-                pointer-events: none !important;
-            }
-            div[class*="viewerBadge"] {
-                display: none !important;
-                pointer-events: none !important;
-            }
-            
-            /* 4. ஒருவேளை அது தெரிந்தாலும், அதைத் தள்ளி மறைத்துவிடுவோம் */
-            .stApp {
-                margin-bottom: -100px;
-            }
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# --- 🛑 THE MAGIC CODE (விளம்பரத்தை மறைக்கும் மந்திரம்) ---
+hide_elements = """
+    <style>
+    /* 1. மேலே உள்ள மெனு மற்றும் கோடுகளை மறைக்க */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    [data-testid="stDecoration"] {display: none;}
+    
+    /* 2. கீழே உள்ள 'Made with Streamlit' Footer-ஐ மறைக்க */
+    footer {visibility: hidden;}
+    
+    /* 3. மிக முக்கியம்: அந்தச் சிவப்பு நிற 'Hosted with Streamlit' பட்டையை மறைக்க */
+    .stApp > header {display: none;}
+    div[class*="viewerBadge"] {display: none !important;}
+    
+    /* 4. Toolbar-ஐ முழுமையாக அகற்ற */
+    [data-testid="stToolbar"] {display: none !important;}
+    </style>
+"""
+st.markdown(hide_elements, unsafe_allow_html=True)
 # -----------------------------------------------------------------------
 
 # 2. Profile Photo
