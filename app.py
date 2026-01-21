@@ -6,36 +6,18 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- 🛑 FINAL ATTEMPT TO REMOVE BADGE (பட்டையை அகற்றும் கடைசி முயற்சி) ---
+# --- ✅ SAFE CLEAN MODE (பாதுகாப்பான மறைக்கும் முறை) ---
+# இது ஆப்பை மறைக்காது, ஆனால் தேவையில்லாதவற்றை மட்டும் மறைக்கும்.
 hide_streamlit_style = """
             <style>
-            /* 1. மெனு மற்றும் தலைப்பை மறைக்க */
+            /* மெனுவை மறைக்க */
             #MainMenu {visibility: hidden;}
-            header {visibility: hidden;}
+            
+            /* கீழே உள்ள Footer-ஐ மறைக்க */
             footer {visibility: hidden;}
             
-            /* 2. அந்தச் சிவப்பு பட்டையை கண்டுபிடித்து மறைக்க (பல வழிகளில்) */
-            [data-testid="stToolbar"] {display: none !important;}
-            [data-testid="stDecoration"] {display: none !important;}
-            [data-testid="stStatusWidget"] {display: none !important;}
-            
-            /* 3. குறிப்பாக Viewer Badge-ஐ குறிவைத்து மறைக்க */
-            div[class*="viewerBadge"] {
-                visibility: hidden !important;
-                display: none !important;
-                pointer-events: none !important;
-                opacity: 0 !important;
-            }
-            
-            /* 4. ஒருவேளை அது மறையவில்லை என்றால், அதை திரைக்கு வெளியே தள்ளிவிடுவோம் */
-            .viewerBadge_container__1QSob {
-                display: none !important;
-            }
-            
-            /* 5. மொபைலில் பாதுகாப்பிற்காக */
-            body > div:last-child {
-                display: none !important;
-            }
+            /* Deploy பட்டனை மறைக்க */
+            .stDeployButton {display:none;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
