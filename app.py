@@ -3,139 +3,141 @@ import google.generativeai as genai
 from PIL import Image
 import os
 
-# 1. Page Setup
-st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
+# 1. Page Config (Mobile Friendly)
+st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered", initial_sidebar_state="collapsed")
 
-# --- HIDE BADGES (சுத்தமான திரை) ---
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            [data-testid="stToolbar"] {display: none !important;}
-            [data-testid="stDecoration"] {display: none !important;}
-            div[class*="viewerBadge"] {display: none !important;}
-            .stDeployButton {display:none !important;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# --- CUSTOM CSS FOR PERFECT MOBILE UI ---
+st.markdown("""
+    <style>
+    /* 1. தேவையில்லாத இடைவெளிகளைக் குறைத்தல் */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    /* 2. லோகோவைச் சிறிதாக்கி நடுவில் வைக்க */
+    .profile-img-container {
+        display: flex;
+        justify_content: center;
+        align_items: center;
+        margin-bottom: 10px;
+    }
+    .profile-img {
+        width: 100px;  /* லோகோ அளவு குறைக்கப்பட்டது */
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    /* 3. தலைப்புகளைச் சிறிதாக்கி ஒரே வரியில் கொண்டு வர */
+    h1 {
+        font-size: 1.8rem !important;
+        text-align: center;
+        margin-bottom: 0px !important;
+        margin-top: 0px !important;
+    }
+    h3 {
+        font-size: 1rem !important;
+        text-align: center;
+        color: #cc7a00;
+        margin-top: 5px !important;
+        white-space: nowrap; /* ஒரே வரியில் வரவைக்க */
+    }
+    
+    /* 4. மறைக்க வேண்டியவை */
+    #MainMenu, footer, header, [data-testid="stToolbar"], [data-testid="stDecoration"], .stDeployButton {
+        display: none !important;
+    }
+    div[class*="viewerBadge"] {display: none !important;}
+    </style>
+""", unsafe_allow_html=True)
 
-# 2. Profile Photo
+# 2. Display Logo (Center & Small)
 col1, col2, col3 = st.columns([1,1,1])
 with col2:
     if os.path.exists("myphoto.png"):
-        st.image("myphoto.png", width=150)
+        st.image("myphoto.png", width=120) # அளவு 120px ஆக குறைக்கப்பட்டது
     elif os.path.exists("myphoto.jpg"):
-        st.image("myphoto.jpg", width=150)
+        st.image("myphoto.jpg", width=120)
 
-st.markdown("<h1 style='text-align: center;'>VSP Chef</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
+# 3. Titles (Compact)
+st.markdown("<h1>VSP Chef</h1>", unsafe_allow_html=True)
+st.markdown("<h3>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 3. DYNAMIC MODEL SELECTION (இதுதான் நிரந்தரத் தீர்வு)
+# 4. API Key Logic
+api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
 model = None
-api_key = None
-
-# Get API Key
-if "GEMINI_API_KEY" in os.environ:
-    api_key = os.environ["GEMINI_API_KEY"]
-elif "GEMINI_API_KEY" in st.secrets:
-    api_key = st.secrets["GEMINI_API_KEY"]
 
 if api_key:
     try:
-        # Clean Key
         clean_key = api_key.strip().replace('\n', '').replace('\r', '').replace('"', '').replace("'", "")
         genai.configure(api_key=clean_key)
-        
-        # --- MAGIC PART: சர்வரிடம் உள்ள மாடல்களைக் கேட்டுப் பெறுதல் ---
         try:
-            # 1. Ask Google: "What models do you have right now?"
-            all_models = genai.list_models()
-            
-            # 2. Filter models that can generate content
-            my_models = [m.name for m in all_models if 'generateContent' in m.supported_generation_methods]
-            
-            # 3. Pick the best one intelligently
-            # First try to find a 'flash' model (Fastest)
-            chosen_model = next((m for m in my_models if 'flash' in m), None)
-            
-            # If no flash, find a 'pro' model (Smartest)
-            if not chosen_model:
-                chosen_model = next((m for m in my_models if 'pro' in m), None)
-            
-            # If nothing specific, just take the first available one
-            if not chosen_model and my_models:
-                chosen_model = my_models[0]
-            
-            if chosen_model:
-                model = genai.GenerativeModel(chosen_model)
-                # st.success(f"Connected to: {chosen_model}") # For debugging only
-            else:
-                st.error("No valid models found. Google might be busy.")
-                
-        except Exception as e:
-            # Fallback if listing fails
+            # Auto-select model logic
+            all_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+            chosen_model = next((m for m in all_models if 'flash' in m), None) or \
+                           next((m for m in all_models if 'pro' in m), 'gemini-pro')
+            model = genai.GenerativeModel(chosen_model)
+        except:
             model = genai.GenerativeModel('gemini-pro')
+    except:
+        st.error("API Error")
 
-    except Exception as e:
-        st.error(f"Config Error: {e}")
-else:
-    st.warning("⚠️ Connecting...")
+# 5. Inputs & Refresh Logic
+if 'generated' not in st.session_state:
+    st.session_state.generated = False
 
-# 4. Inputs
+# Refresh Button (Clears everything)
+if st.session_state.generated:
+    if st.button("🔄 Start New Recipe (Refresh)"):
+        st.session_state.generated = False
+        st.rerun()
+
+# Tabs
 tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
 user_query = ""
 user_img = None
 
 with tab1:
-    txt = st.text_area("What ingredients do you have? (Any language)")
-    if st.button("Get Recipe"):
+    # Key is added to clear text on refresh
+    txt = st.text_area("Ingredients (Any language):", key="txt_input")
+    if st.button("Get Recipe", type="primary"):
         user_query = txt
 
 with tab2:
-    file = st.file_uploader("Upload fridge photo", type=['jpg', 'png', 'jpeg'])
-    image_text = st.text_input("Add instructions (Optional):", placeholder="Ex: Make it spicy, or Reply in Tamil...")
-    
-    if file and st.button("Analyze & Cook"):
+    file = st.file_uploader("Upload fridge photo", type=['jpg', 'png', 'jpeg'], key="img_input")
+    image_text = st.text_input("Instructions (Optional):", placeholder="Ex: Make it spicy...", key="img_txt")
+    if file and st.button("Analyze & Cook", type="primary"):
         user_img = Image.open(file)
-        if image_text:
-            user_query = image_text
-        else:
-            user_query = "Identify ingredients and suggest a world-class recipe."
+        user_query = image_text if image_text else "Suggest a recipe based on this image."
 
-# 5. Cooking Logic
-if user_query:
-    if not model:
-        st.error("Connecting to kitchen... Please wait 10 seconds and try again.")
-    else:
-        with st.spinner("VSP Chef is cooking..."):
-            try:
-                prompt = f"""
-                You are VSP Chef, a world-renowned Master of World Cuisine.
-                
-                USER INPUT/CONTEXT: "{user_query}"
-                
-                CRITICAL LANGUAGE RULES:
-                1. If the user explicitly asks for a language (e.g., "in Tamil"), reply in THAT language.
-                2. If no language is specified, reply in the SAME language the user typed.
-                
-                COOKING INSTRUCTIONS:
-                1. Analyze the input.
-                2. Suggest a creative, delicious recipe.
-                3. Provide step-by-step instructions.
-                """
-                
-                if user_img:
-                    try:
-                        response = model.generate_content([prompt, user_img])
-                    except:
-                        response = model.generate_content(prompt)
-                else:
-                    response = model.generate_content(prompt)
-                
-                st.markdown("---")
-                st.markdown(response.text)
-                st.balloons()
-                st.success("Bon Appétit! - VSP Chef")
-            except Exception as e:
-                st.error(f"Server is busy. Please click 'Get Recipe' again. (Error: {e})")
+# 6. Cooking Logic
+if user_query and model:
+    with st.spinner("VSP Chef is cooking..."):
+        try:
+            prompt = f"""
+            You are VSP Chef. USER INPUT: "{user_query}"
+            RULES: Reply in the USER'S LANGUAGE. Suggest a delicious recipe with steps.
+            """
+            
+            if user_img:
+                try: response = model.generate_content([prompt, user_img])
+                except: response = model.generate_content(prompt)
+            else:
+                response = model.generate_content(prompt)
+            
+            st.markdown("---")
+            st.markdown(response.text)
+            st.balloons()
+            st.success("Bon Appétit! - VSP Chef")
+            
+            # Mark as generated to show Refresh button next time
+            st.session_state.generated = True
+            
+        except Exception as e:
+            st.error(f"Error: {e}")
