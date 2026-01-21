@@ -31,47 +31,50 @@ with col2:
 st.markdown("<h1 style='text-align: center;'>VSP Chef</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center; color: #cc7a00;'>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 3. ROBUST API KEY & MODEL HANDLING
-model = None
+# 3. ROBUST API KEY HANDLING
 api_key = None
-
-# Get API Key
 if "GEMINI_API_KEY" in os.environ:
     api_key = os.environ["GEMINI_API_KEY"]
 elif "GEMINI_API_KEY" in st.secrets:
     api_key = st.secrets["GEMINI_API_KEY"]
 
-if api_key:
-    try:
-        # Clean Key
-        clean_key = api_key.strip().replace('\n', '').replace('\r', '').replace('"', '').replace("'", "")
-        genai.configure(api_key=clean_key)
-        
-        # --- SMART MODEL SELECTION (The Fix for 404) ---
+# 4. UNIVERSAL COOKING FUNCTION (பல மாடல்களை முயற்சிக்கும் மந்திரம்)
+def try_generate_content(prompt, image=None):
+    # முயற்சி செய்ய வேண்டிய மாடல்களின் பட்டியல்
+    models_to_try = [
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-pro',
+        'gemini-pro',  # பழைய ஆனால் உறுதியான மாடல்
+        'gemini-1.0-pro'
+    ]
+    
+    last_error = None
+    
+    for model_name in models_to_try:
         try:
-            # 1. கூகுளிடம் உள்ள மாடல்களைப் பட்டியலிடு
-            available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-            
-            # 2. அதில் 'flash' உள்ளதா எனத் தேடு
-            chosen_model_name = next((m for m in available_models if 'flash' in m), None)
-            
-            # 3. இல்லை என்றால் 'pro' அல்லது முதலில் உள்ளதை எடு
-            if not chosen_model_name:
-                chosen_model_name = next((m for m in available_models if 'pro' in m), 'gemini-pro')
-            
-            model = genai.GenerativeModel(chosen_model_name)
-            # st.success(f"Connected to {chosen_model_name}") # Testing only
-            
+            model = genai.GenerativeModel(model_name)
+            if image:
+                # சில பழைய மாடல்கள் படங்களை ஏற்காது, அதைத் தவிர்க்கிறோம்
+                if 'pro' in model_name and '1.5' not in model_name: 
+                     return model.generate_content(prompt) # படம் இல்லாமல் அனுப்பு
+                return model.generate_content([prompt, image])
+            else:
+                return model.generate_content(prompt)
         except Exception as e:
-            # பட்டியலிட முடியாவிட்டால், பாதுகாப்பான பழைய மாடலை எடு
-            model = genai.GenerativeModel('gemini-pro')
+            last_error = e
+            continue # அடுத்த மாடலை முயற்சி செய்
+            
+    raise last_error # எதுவும் வேலை செய்யவில்லை என்றால் பிழையைக் காட்டு
 
-    except Exception as e:
-        st.error(f"Config Error: {e}")
+# 5. CONFIG
+if api_key:
+    clean_key = api_key.strip().replace('\n', '').replace('\r', '').replace('"', '').replace("'", "")
+    genai.configure(api_key=clean_key)
 else:
     st.warning("⚠️ Connecting...")
 
-# 4. Inputs
+# 6. Inputs
 tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
 user_query = ""
 user_img = None
@@ -92,40 +95,33 @@ with tab2:
         else:
             user_query = "Identify ingredients and suggest a world-class recipe."
 
-# 5. Cooking Logic
+# 7. Execution
 if user_query:
-    if not model:
-        st.error("Checking connection... Please try again in 5 seconds.")
+    if not api_key:
+        st.error("Connection Error: API Key missing.")
     else:
         with st.spinner("VSP Chef is cooking..."):
             try:
+                # Prompt
                 prompt = f"""
                 You are VSP Chef, a world-renowned Master of World Cuisine.
-                
-                USER INPUT/CONTEXT: "{user_query}"
+                USER INPUT: "{user_query}"
                 
                 CRITICAL LANGUAGE RULES:
-                1. If the user explicitly asks for a language (e.g., "in Tamil"), reply in THAT language.
-                2. If no language is specified, reply in the SAME language the user typed.
+                1. If user asks in Tamil -> Reply in TAMIL.
+                2. If user asks in English -> Reply in ENGLISH.
+                3. If implied/mixed -> Detect and reply in the user's language.
                 
-                COOKING INSTRUCTIONS:
-                1. Analyze the input.
-                2. Suggest a creative, delicious recipe.
-                3. Provide step-by-step instructions.
+                Provide a delicious recipe with step-by-step instructions.
                 """
                 
-                if user_img:
-                    try:
-                        response = model.generate_content([prompt, user_img])
-                    except:
-                        # If image fails, try text only
-                        response = model.generate_content(prompt)
-                else:
-                    response = model.generate_content(prompt)
+                # கால் செய்கிறோம் (எல்லா மாடல்களையும் முயற்சிக்கும்)
+                response = try_generate_content(prompt, user_img)
                 
                 st.markdown("---")
                 st.markdown(response.text)
                 st.balloons()
                 st.success("Bon Appétit! - VSP Chef")
+                
             except Exception as e:
-                st.error(f"Recipe Error: {e}")
+                st.error(f"Sorry, I am busy right now. Please try again. (Error: {e})")
