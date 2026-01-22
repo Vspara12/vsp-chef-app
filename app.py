@@ -10,8 +10,11 @@ st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="cente
 st.markdown("""
     <style>
     .block-container {padding-top: 2rem !important; padding-bottom: 3rem !important;}
+    
+    /* Logo Center */
     div[data-testid="column"] {display: flex; justify_content: center;}
     
+    /* Title Styles */
     h1 {
         text-align: center; margin-top: -15px !important; margin-bottom: -10px !important;
         font-size: 2.2rem !important; font-weight: 800 !important; color: #1E1E1E !important;
@@ -38,39 +41,59 @@ with col2:
 st.markdown("<h1>VSP Chef</h1>", unsafe_allow_html=True)
 st.markdown("<h3>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 3. RESTART BUTTON
+# 3. API KEY SETUP
+api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+
+# 4. ROBUST COOKING FUNCTION (1.5 Models Only)
+def get_chef_response(user_input, image_input=None):
+    # பழைய 'gemini-pro' ஐ நீக்கிவிட்டேன். இவை இரண்டும் தான் இப்போது சிறந்தது.
+    models_to_try = ["gemini-1.5-flash", "gemini-1.5-pro"]
+    
+    last_error = None
+    
+    # Key Configuration
+    clean_key = api_key.strip().replace('"', '').replace("'", "")
+    genai.configure(api_key=clean_key)
+
+    for model_name in models_to_try:
+        try:
+            model = genai.GenerativeModel(model_name)
+            
+            # Prompt Structure
+            prompt = f"""
+            You are VSP Chef, a world-renowned Master of World Cuisine.
+            USER INPUT: "{user_input}"
+            
+            CRITICAL RULES:
+            1. If user asks in Tamil -> Reply in TAMIL.
+            2. If user asks in English -> Reply in ENGLISH.
+            3. Detect and match the user's language automatically.
+            
+            INSTRUCTIONS:
+            Suggest a delicious recipe with step-by-step instructions.
+            """
+            
+            if image_input:
+                response = model.generate_content([prompt, image_input])
+            else:
+                response = model.generate_content(prompt)
+                
+            return response # வெற்றி!
+            
+        except Exception as e:
+            last_error = e
+            continue # அடுத்த மாடலுக்குச் செல்
+            
+    raise last_error # இரண்டும் தோல்வியடைந்தால் மட்டும்
+
+# 5. RESTART BUTTON
 if 'generated' not in st.session_state: st.session_state.generated = False
 if st.session_state.generated:
     if st.button("🔄 Start New Recipe"):
         st.session_state.generated = False
         st.rerun()
 
-# 4. ROBUST FUNCTION (ஒன்று இல்லையென்றால் இன்னொன்று)
-def generate_recipe(api_key, prompt, image=None):
-    genai.configure(api_key=api_key)
-    
-    # வரிசையாக முயற்சிக்கும் பட்டியல்
-    models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro']
-    
-    last_error = None
-    
-    for model_name in models:
-        try:
-            model = genai.GenerativeModel(model_name)
-            if image:
-                # பழைய pro மாடல் படத்தை ஏற்காது, எனவே எழுத்தை மட்டும் அனுப்புவோம்
-                if 'gemini-pro' == model_name:
-                    return model.generate_content(prompt)
-                return model.generate_content([prompt, image])
-            else:
-                return model.generate_content(prompt)
-        except Exception as e:
-            last_error = e
-            continue # அடுத்த மாடலை முயற்சி செய்
-            
-    raise last_error
-
-# 5. INPUTS
+# 6. INPUTS
 if not st.session_state.generated:
     st.markdown("---")
     tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
@@ -86,26 +109,16 @@ if not st.session_state.generated:
         image_text = st.text_input("Add instructions (Optional):", placeholder="Ex: Make it spicy...")
         if file and st.button("Analyze & Cook", type="primary"):
             user_img = Image.open(file)
-            user_query = image_text if image_text else "Identify ingredients and suggest a recipe."
+            user_query = image_text if image_text else "Recipe from this image"
 
-    # 6. EXECUTION
+    # 7. EXECUTION
     if user_query:
-        api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
-        
         if not api_key:
             st.error("API Key Missing")
         else:
-            clean_key = api_key.strip().replace('"', '').replace("'", "")
-            
             with st.spinner("VSP Chef is cooking..."):
                 try:
-                    prompt = f"""
-                    You are VSP Chef.
-                    USER INPUT: "{user_query}"
-                    RULES: Reply in the user's language. Suggest a delicious recipe.
-                    """
-                    
-                    response = generate_recipe(clean_key, prompt, user_img)
+                    response = get_chef_response(user_query, user_img)
                     
                     st.markdown("---")
                     st.markdown(response.text)
@@ -113,4 +126,11 @@ if not st.session_state.generated:
                     st.session_state.generated = True
                     
                 except Exception as e:
-                    st.error(f"Something went wrong. Error: {e}")
+                    # Error Handling
+                    err_msg = str(e)
+                    if "429" in err_msg:
+                        st.warning("👨‍🍳 Chef is busy! (Quota Exceeded). Please wait 30 seconds.")
+                    elif "404" in err_msg:
+                        st.error("Technical Error: Models not found. (Please check requirements.txt is updated)")
+                    else:
+                        st.error(f"Error: {e}")
