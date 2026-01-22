@@ -6,33 +6,19 @@ import os
 # 1. Page Setup
 st.set_page_config(page_title="VSP Chef", page_icon="👨‍🍳", layout="centered")
 
-# --- UI STYLING (உங்கள் டிசைன்) ---
+# --- UI STYLING ---
 st.markdown("""
     <style>
     .block-container {padding-top: 2rem !important; padding-bottom: 3rem !important;}
-    
-    /* Logo Center */
-    div[data-testid="column"] {display: flex; justify_content: center;}
-    
-    /* Title Styles */
-    h1 {
-        text-align: center; margin-top: -15px !important; margin-bottom: -10px !important;
-        font-size: 2.2rem !important; font-weight: 800 !important; color: #1E1E1E !important;
-    }
-    h3 {
-        text-align: center; margin-top: 0px !important; padding-top: 5px !important;
-        color: #E67E22 !important; font-size: 0.9rem !important;
-        font-weight: 600 !important; letter-spacing: 1.5px !important; text-transform: uppercase;
-    }
-    
-    /* Hide Badges */
+    h1 {text-align: center; margin-top: -20px; color: #333;}
+    h3 {text-align: center; color: #E67E22; font-size: 1rem; text-transform: uppercase;}
     #MainMenu, footer, header, .stDeployButton {display: none !important;}
     [data-testid="stToolbar"] {display: none !important;}
     div[class*="viewerBadge"] {display: none !important;}
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Display Logo
+# 2. Logo
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     if os.path.exists("myphoto.png"): st.image("myphoto.png", width=130)
@@ -41,59 +27,34 @@ with col2:
 st.markdown("<h1>VSP Chef</h1>", unsafe_allow_html=True)
 st.markdown("<h3>MASTER OF WORLD CUISINE 🌎</h3>", unsafe_allow_html=True)
 
-# 3. API KEY SETUP
+# --- 🔍 DEBUGGING: VERSION CHECK (இதைச் சோதிக்க சேர்க்கப்பட்டுள்ளது) ---
+# இது திரையில் வெர்ஷனைக் காட்டும். 0.8.3 வந்தால் வெற்றி!
+# st.caption(f"System Version: {genai.__version__}") 
+
+# 3. API & MODEL SETUP (The Final Fix)
 api_key = os.environ.get("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+model = None
 
-# 4. ROBUST COOKING FUNCTION (1.5 Models Only)
-def get_chef_response(user_input, image_input=None):
-    # பழைய 'gemini-pro' ஐ நீக்கிவிட்டேன். இவை இரண்டும் தான் இப்போது சிறந்தது.
-    models_to_try = ["gemini-1.5-flash", "gemini-1.5-pro"]
-    
-    last_error = None
-    
-    # Key Configuration
-    clean_key = api_key.strip().replace('"', '').replace("'", "")
-    genai.configure(api_key=clean_key)
+if api_key:
+    try:
+        clean_key = api_key.strip().replace('"', '').replace("'", "")
+        genai.configure(api_key=clean_key)
+        
+        # நீங்கள் சொன்னது போல 1.5 Pro அல்லது Flash-ஐ நேரடியாக அழைக்கிறோம்
+        # பழைய வெர்ஷனில் இது வேலை செய்யாது, புதியதில் கண்டிப்பாக வேலை செய்யும்.
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
+        
+    except Exception as e:
+        st.error(f"Setup Error: {e}")
 
-    for model_name in models_to_try:
-        try:
-            model = genai.GenerativeModel(model_name)
-            
-            # Prompt Structure
-            prompt = f"""
-            You are VSP Chef, a world-renowned Master of World Cuisine.
-            USER INPUT: "{user_input}"
-            
-            CRITICAL RULES:
-            1. If user asks in Tamil -> Reply in TAMIL.
-            2. If user asks in English -> Reply in ENGLISH.
-            3. Detect and match the user's language automatically.
-            
-            INSTRUCTIONS:
-            Suggest a delicious recipe with step-by-step instructions.
-            """
-            
-            if image_input:
-                response = model.generate_content([prompt, image_input])
-            else:
-                response = model.generate_content(prompt)
-                
-            return response # வெற்றி!
-            
-        except Exception as e:
-            last_error = e
-            continue # அடுத்த மாடலுக்குச் செல்
-            
-    raise last_error # இரண்டும் தோல்வியடைந்தால் மட்டும்
-
-# 5. RESTART BUTTON
+# 4. Refresh Button
 if 'generated' not in st.session_state: st.session_state.generated = False
 if st.session_state.generated:
     if st.button("🔄 Start New Recipe"):
         st.session_state.generated = False
         st.rerun()
 
-# 6. INPUTS
+# 5. Inputs
 if not st.session_state.generated:
     st.markdown("---")
     tab1, tab2 = st.tabs(["📝 Type Ingredients", "📷 Upload Photo"])
@@ -103,22 +64,30 @@ if not st.session_state.generated:
     with tab1:
         txt = st.text_area("What ingredients do you have? (Any language)")
         if st.button("Get Recipe", type="primary"): user_query = txt
-
+    
     with tab2:
-        file = st.file_uploader("Upload fridge photo", type=['jpg', 'png', 'jpeg'])
-        image_text = st.text_input("Add instructions (Optional):", placeholder="Ex: Make it spicy...")
-        if file and st.button("Analyze & Cook", type="primary"):
-            user_img = Image.open(file)
-            user_query = image_text if image_text else "Recipe from this image"
+        img = st.file_uploader("Upload fridge photo", type=['jpg','png','jpeg'])
+        txt_img = st.text_input("Add instructions (Optional):")
+        if img and st.button("Analyze & Cook", type="primary"):
+            user_img = Image.open(img)
+            user_query = txt_img if txt_img else "Recipe from this image"
 
-    # 7. EXECUTION
+    # 6. Execution
     if user_query:
-        if not api_key:
-            st.error("API Key Missing")
+        if not model:
+            st.error("Connection Error: Please check API Key.")
         else:
             with st.spinner("VSP Chef is cooking..."):
                 try:
-                    response = get_chef_response(user_query, user_img)
+                    prompt = f"""
+                    You are VSP Chef. USER INPUT: "{user_query}"
+                    RULES: Reply in the user's language. Suggest a delicious recipe.
+                    """
+                    
+                    if user_img:
+                        response = model.generate_content([prompt, user_img])
+                    else:
+                        response = model.generate_content(prompt)
                     
                     st.markdown("---")
                     st.markdown(response.text)
@@ -126,11 +95,10 @@ if not st.session_state.generated:
                     st.session_state.generated = True
                     
                 except Exception as e:
-                    # Error Handling
-                    err_msg = str(e)
-                    if "429" in err_msg:
-                        st.warning("👨‍🍳 Chef is busy! (Quota Exceeded). Please wait 30 seconds.")
-                    elif "404" in err_msg:
-                        st.error("Technical Error: Models not found. (Please check requirements.txt is updated)")
+                    # 429 என்றால் Quota, 404 என்றால் Version பிரச்சனை
+                    if "429" in str(e):
+                        st.warning("👨‍🍳 Chef is busy! (Quota limit). Wait 30s.")
+                    elif "404" in str(e):
+                        st.error(f"Version Error: Server is using old software ({genai.__version__}). Need >0.8.3")
                     else:
                         st.error(f"Error: {e}")
